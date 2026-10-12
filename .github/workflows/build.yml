@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkoutv4
+        uses: actions/checkout@v4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -55,7 +55,6 @@ jobs:
 
       - name: Decode Keystore File
         run: |
-          # 3rd app hamesha app folder ke andar hi hota hai, release.jks wahi save hogi
           cd "$PROJECT_DIR/app"
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
           echo "KEYSTORE_DIR=$PROJECT_DIR/app" >> $GITHUB_ENV
@@ -75,3 +74,4 @@ jobs:
         with:
           name: app-release-bundle
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/bundle/release/*.aab
+          
