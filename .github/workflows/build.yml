@@ -55,6 +55,7 @@ jobs:
 
       - name: Decode Keystore File
         run: |
+          # सीधे app मॉड्यूल के अंदर release.jks को सेव करें ताकि Gradle को 상대 path (app/release.jks) से मिल जाए
           KEYSTORE_DIR="${{ env.PROJECT_DIR }}/app"
           mkdir -p "$KEYSTORE_DIR"
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$KEYSTORE_DIR/release.jks"
@@ -64,7 +65,7 @@ jobs:
           cd "${{ env.PROJECT_DIR }}"
           chmod +x gradlew
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file="${{ env.PROJECT_DIR }}/app/release.jks" \
+            -Pandroid.injected.signing.store.file="app/release.jks" \
             -Pandroid.injected.signing.store.password="${{ secrets.KEY_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
@@ -74,3 +75,4 @@ jobs:
         with:
           name: app-release-bundle
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/bundle/release/app-release.aab
+          
