@@ -53,18 +53,30 @@ jobs:
           PROJECT_DIR=$(dirname "$GRADLE_PATH")
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
 
-      - name: Decode Keystore File
+      - name: Decode Keystore File (Both Locations)
         run: |
           cd "$PROJECT_DIR"
           mkdir -p app
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.jks
+          # दोनों संभव स्थानों पर कीस्टोर डिकोड कर देते हैं ताकि पाथ की कोई समस्या न रहे
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
+          cp release.jks app/release.jks
 
-      - name: Build and Sign Signed AAB
+      - name: Build and Sign Signed AAB (Auto Path Detection)
         run: |
           cd "$PROJECT_DIR"
           chmod +x gradlew
+          
+          # जाँच करें कि कीस्टोर app फोल्डर में है या रूट में
+          if [ -f "app/release.jks" ]; then
+            KEYSTORE_PATH="app/release.jks"
+          else
+            KEYSTORE_PATH="release.jks"
+          fi
+          
+          echo "Using keystore path: $KEYSTORE_PATH"
+          
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file="app/release.jks" \
+            -Pandroid.injected.signing.store.file="$KEYSTORE_PATH" \
             -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
@@ -74,4 +86,3 @@ jobs:
         with:
           name: app-release-bundle
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/bundle/release/*.aab
-          
