@@ -55,7 +55,7 @@ jobs:
 
       - name: Decode Keystore File
         run: |
-          cd "$PROJECT_DIR"
+          cd "$PROJECT_DIR/app"
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
 
       - name: Build and Sign Signed AAB
@@ -73,3 +73,4 @@ jobs:
         with:
           name: app-release-bundle
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/bundle/release/*.aab
+          
