@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkoutv4
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -35,44 +35,43 @@ jobs:
 
       - name: Find Latest Zip and Extract
         run: |
-          ZIP_FILE=$(find . -maxdepth 2 -type f -name "*.zip" -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)
+          ZIP_FILE=$(find . -maxdepth 2 -type f -name "*.zip" -print -quit | head -n 1)
           if [ -z "$ZIP_FILE" ]; then
             echo "ERROR: No zip file found in root or subfolders."
             exit 1
           fi
           mkdir -p extracted_project
-          unzip -q -o "$ZIP_FILE" -d extracted_project
+          unzip -q "$ZIP_FILE" -d extracted_project
 
       - name: Locate Project Root
         run: |
-          GRADLEW_PATH=$(find extracted_project -type f -name "gradlew" | head -n 1)
-          if [ -z "$GRADLEW_PATH" ]; then
+          GRADLE_PATH=$(find extracted_project -type f -name "gradlew" | head -n 1)
+          if [ -z "$GRADLE_PATH" ]; then
             echo "ERROR: gradlew script not found inside extracted files."
             exit 1
           fi
-          PROJECT_DIR=$(dirname "$GRADLEW_PATH")
+          PROJECT_DIR=$(dirname "$GRADLE_PATH")
           echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
 
       - name: Decode Keystore File
         run: |
-          # सीधे app मॉड्यूल के अंदर release.jks को सेव करें ताकि Gradle को 상대 path (app/release.jks) से मिल जाए
-          KEYSTORE_DIR="${{ env.PROJECT_DIR }}/app"
-          mkdir -p "$KEYSTORE_DIR"
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$KEYSTORE_DIR/release.jks"
+          # 3rd app hamesha app folder ke andar hi hota hai, release.jks wahi save hogi
+          cd "$PROJECT_DIR/app"
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
+          echo "KEYSTORE_DIR=$PROJECT_DIR/app" >> $GITHUB_ENV
 
       - name: Build and Sign Signed AAB
         run: |
-          cd "${{ env.PROJECT_DIR }}"
+          cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file="app/release.jks" \
-            -Pandroid.injected.signing.store.password="${{ secrets.KEY_PASSWORD }}" \
-            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.store.file="release.jks" \
+            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEYALAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-bundle
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/bundle/release/app-release.aab
-          
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/bundle/release/*.aab
