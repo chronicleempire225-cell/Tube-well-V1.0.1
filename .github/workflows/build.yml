@@ -29,11 +29,12 @@ jobs:
           echo "PROJECT_DIR=." >> $GITHUB_ENV
         fi
 
-    - name: Decode Keystore File
+    - name: Decode Keystore File (Multi-path fallback)
       run: |
         cd "$PROJECT_DIR"
         mkdir -p app/app
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/app/release.jks
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.jks
+        cp app/release.jks app/app/release.jks
 
     - name: Build and Sign Signed AAB
       run: |
