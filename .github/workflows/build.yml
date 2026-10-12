@@ -62,13 +62,14 @@ jobs:
           KEYSTORE_DIR="${{ env.PROJECT_DIR }}/app"
           mkdir -p "$KEYSTORE_DIR"
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$KEYSTORE_DIR/release.jks"
+          echo "Keystore saved to: $KEYSTORE_DIR/release.jks"
 
       - name: Build and Sign Signed AAB
         run: |
           cd "${{ env.PROJECT_DIR }}"
           chmod +x gradlew
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file=release.jks \
+            -Pandroid.injected.signing.store.file=app/release.jks \
             -Pandroid.injected.signing.store.password="${{ secrets.KEY_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
