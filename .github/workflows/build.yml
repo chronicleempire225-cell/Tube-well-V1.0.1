@@ -18,13 +18,27 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
+    - name: Extract Project Zip
+      run: |
+        # Zip file ko find karke extract karna
+        ZIP_FILE=$(find . -maxdepth 2 -name "*.zip" | head -n 1)
+        if [ -n "$ZIP_FILE" ]; then
+          unzip -o "$ZIP_FILE" -d extracted_project
+          PROJECT_DIR=$(find extracted_project -maxdepth 2 -name "gradlew" -exec dirname {} \;)
+          echo "PROJECT_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+        else
+          echo "PROJECT_DIR=." >> $GITHUB_ENV
+        fi
+
     - name: Decode Keystore File
       run: |
+        cd "$PROJECT_DIR"
         mkdir -p app
         echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.jks
 
     - name: Build and Sign Signed AAB
       run: |
+        cd "$PROJECT_DIR"
         chmod +x gradlew
         ./gradlew bundleRelease \
           -Pandroid.injected.signing.store.file="app/release.jks" \
@@ -36,4 +50,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: release-aab
-        path: app/build/outputs/bundle/release/app-release.aab
+        path: |
+          **/app/build/outputs/bundle/release/*.aab
