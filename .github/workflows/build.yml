@@ -56,15 +56,16 @@ jobs:
       - name: Decode Keystore File
         run: |
           cd "$PROJECT_DIR"
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
-          echo "KEYSTORE_DIR=$PROJECT_DIR" >> $GITHUB_ENV
+          mkdir -p app
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.jks
+          echo "KEYSTORE_DIR=$PROJECT_DIR/app" >> $GITHUB_ENV
 
       - name: Build and Sign Signed AAB
         run: |
           cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file="release.jks" \
+            -Pandroid.injected.signing.store.file="app/release.jks" \
             -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
@@ -74,3 +75,4 @@ jobs:
         with:
           name: app-release-bundle
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/bundle/release/*.aab
+          
