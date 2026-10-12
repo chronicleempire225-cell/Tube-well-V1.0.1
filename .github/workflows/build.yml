@@ -55,15 +55,16 @@ jobs:
 
       - name: Decode Keystore File
         run: |
-          cd "$PROJECT_DIR/app"
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.jks
+          cd "$PROJECT_DIR"
+          mkdir -p app
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.jks
 
       - name: Build and Sign Signed AAB
         run: |
           cd "$PROJECT_DIR"
           chmod +x gradlew
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file="release.jks" \
+            -Pandroid.injected.signing.store.file="app/release.jks" \
             -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
             -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
