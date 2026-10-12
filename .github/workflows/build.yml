@@ -29,19 +29,24 @@ jobs:
           echo "PROJECT_DIR=." >> $GITHUB_ENV
         fi
 
-    - name: Decode Keystore File (Multi-path fallback)
+    - name: Decode Keystore File
       run: |
         cd "$PROJECT_DIR"
         mkdir -p app/app
-        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.jks
-        cp app/release.jks app/app/release.jks
+        # Gradle config requires "my-upload-key.jks"
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/my-upload-key.jks
+        cp app/my-upload-key.jks app/app/my-upload-key.jks
+        cp app/my-upload-key.jks my-upload-key.jks
 
     - name: Build and Sign Signed AAB
       run: |
         cd "$PROJECT_DIR"
         chmod +x gradlew
         ./gradlew bundleRelease \
-          -Pandroid.injected.signing.store.file="app/app/release.jks" \
+          -PKEYSTORE_PASSWORD="${{ secrets.KEYSTORE_PASSWORD }}" \
+          -PKEY_ALIAS="${{ secrets.KEY_ALIAS }}" \
+          -PKEY_PASSWORD="${{ secrets.KEY_PASSWORD }}" \
+          -Pandroid.injected.signing.store.file="app/my-upload-key.jks" \
           -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
           -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
           -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
