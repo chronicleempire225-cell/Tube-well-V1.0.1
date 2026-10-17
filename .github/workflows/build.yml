@@ -1,4 +1,4 @@
-name: Build and Sign AAB
+Name: Build and Sign AAB
 
 on:
   push:
@@ -51,10 +51,23 @@ jobs:
           -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
           -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
 
+    - name: Find Latest AAB File
+      id: find_aab
+      run: |
+        cd "$PROJECT_DIR"
+        # सबसे नई .aab फ़ाइल का पता लगाएं
+        LATEST_AAB=$(find . -name "*.aab" -type f -print0 | xargs -0 ls -t | head -n 1)
+        if [ -z "$LATEST_AAB" ]; then
+          echo "Error: No AAB file found!"
+          exit 1
+        fi
+        echo "Found latest AAB: $LATEST_AAB"
+        # एब्सोल्यूट पाथ या सही पाथ सेट करें ताकि अपलोड में दिक्कत न हो
+        echo "aab_path=$PROJECT_DIR/$LATEST_AAB" >> $GITHUB_ENV
+
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
         name: release-aab
-        path: |
-          **/app/build/outputs/bundle/release/*.aab
-          
+        path: ${{ env.aab_path }}
+        
